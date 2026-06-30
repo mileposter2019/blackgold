@@ -499,6 +499,12 @@
       }
     ];
 
+    function makeId() {
+      return globalThis.crypto && globalThis.crypto.randomUUID
+        ? globalThis.crypto.randomUUID()
+        : `lunc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
     const appState = {
       lastAnalysis: '',
       selectedNodeId: null,
@@ -508,10 +514,10 @@
       panX: 0,
       panY: 0,
       nodes: [
-        { id: crypto.randomUUID(), type: 'wallet', label: 'My Wallet\n18.45M LUNC', x: 130, y: 150, w: 180, h: 96, color: 'wallet' },
-        { id: crypto.randomUUID(), type: 'rect', label: 'Major Tx\nDEX liquidity move', x: 450, y: 165, w: 210, h: 96, color: 'rect' },
-        { id: crypto.randomUUID(), type: 'circle', label: 'Staking\nRewards', x: 250, y: 380, w: 150, h: 150, color: 'circle' },
-        { id: crypto.randomUUID(), type: 'note', label: 'Community Sentiment\nBullish but cautious', x: 720, y: 340, w: 220, h: 120, color: 'note' }
+        { id: makeId(), type: 'wallet', label: 'My Wallet\n18.45M LUNC', x: 130, y: 150, w: 180, h: 96, color: 'wallet' },
+        { id: makeId(), type: 'rect', label: 'Major Tx\nDEX liquidity move', x: 450, y: 165, w: 210, h: 96, color: 'rect' },
+        { id: makeId(), type: 'circle', label: 'Staking\nRewards', x: 250, y: 380, w: 150, h: 150, color: 'circle' },
+        { id: makeId(), type: 'note', label: 'Community Sentiment\nBullish but cautious', x: 720, y: 340, w: 220, h: 120, color: 'note' }
       ],
       lines: []
     };
@@ -786,11 +792,18 @@ ${extra ? `\n## Imported / Extra Context\n${extra}\n` : ''}`;
         wallet: { w: 190, h: 98 }
       };
       const size = defaults[type] || defaults.rect;
-      const node = { id: crypto.randomUUID(), type, label, x, y, w: size.w, h: size.h };
+      const node = { id: makeId(), type, label, x, y, w: size.w, h: size.h };
       appState.nodes.push(node);
       appState.selectedNodeId = node.id;
       renderCanvas();
       return node;
+    }
+
+    function markSelectedNode(id) {
+      appState.selectedNodeId = id;
+      $$('.canvas-node').forEach((nodeEl) => {
+        nodeEl.classList.toggle('selected', nodeEl.dataset.id === id);
+      });
     }
 
     function deleteSelectedNode() {
@@ -809,7 +822,7 @@ ${extra ? `\n## Imported / Extra Context\n${extra}\n` : ''}`;
 
         el.addEventListener('pointerdown', (event) => {
           event.stopPropagation();
-          appState.selectedNodeId = id;
+          markSelectedNode(id);
 
           if (appState.connectMode) {
             if (!appState.pendingConnection) {
@@ -835,7 +848,9 @@ ${extra ? `\n## Imported / Extra Context\n${extra}\n` : ''}`;
             const current = canvasPoint(moveEvent.clientX, moveEvent.clientY);
             node.x = Math.max(0, startX + current.x - start.x);
             node.y = Math.max(0, startY + current.y - start.y);
-            renderCanvas();
+            el.style.left = `${node.x}px`;
+            el.style.top = `${node.y}px`;
+            renderLines();
           };
           const up = () => {
             el.removeEventListener('pointermove', move);
@@ -843,12 +858,11 @@ ${extra ? `\n## Imported / Extra Context\n${extra}\n` : ''}`;
           };
           el.addEventListener('pointermove', move);
           el.addEventListener('pointerup', up);
-          renderCanvas();
         });
 
         resizeHandle.addEventListener('pointerdown', (event) => {
           event.stopPropagation();
-          appState.selectedNodeId = id;
+          markSelectedNode(id);
           const start = canvasPoint(event.clientX, event.clientY);
           const startW = node.w;
           const startH = node.h;
@@ -860,7 +874,9 @@ ${extra ? `\n## Imported / Extra Context\n${extra}\n` : ''}`;
             if (node.type === 'circle') {
               node.h = node.w;
             }
-            renderCanvas();
+            el.style.width = `${node.w}px`;
+            el.style.height = `${node.h}px`;
+            renderLines();
           };
           const up = () => {
             resizeHandle.removeEventListener('pointermove', move);
