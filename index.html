@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUNC AI Wallet Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            luncNavy: '#0F172A',
+            luncPanel: '#111C33',
+            luncPanel2: '#17233E',
+            luncGold: '#FACC15',
+            luncOrange: '#FB923C'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'Segoe UI', 'Arial', 'sans-serif']
+          },
+          boxShadow: {
+            glow: '0 0 35px rgba(250, 204, 21, 0.16)',
+            orangeGlow: '0 0 26px rgba(251, 146, 60, 0.16)'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      color-scheme: dark;
+      --navy: #0F172A;
+      --panel: #111C33;
+      --panel-2: #17233E;
+      --gold: #FACC15;
+      --orange: #FB923C;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 12% 10%, rgba(250, 204, 21, 0.10), transparent 30%),
+        radial-gradient(circle at 86% 6%, rgba(251, 146, 60, 0.10), transparent 26%),
+        radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.08), transparent 35%),
+        var(--navy);
+      min-height: 100vh;
+    }
+
+    .glass {
+      background: linear-gradient(145deg, rgba(17, 28, 51, 0.92), rgba(15, 23, 42, 0.86));
+      border: 1px solid rgba(250, 204, 21, 0.14);
+      backdrop-filter: blur(14px);
+    }
+
+    .gold-gradient {
+      background: linear-gradient(135deg, #FACC15 0%, #FB923C 100%);
+    }
+
+    .tab-active {
+      color: #0F172A;
+      background: linear-gradient(135deg, #FACC15 0%, #FB923C 100%);
+      box-shadow: 0 16px 36px rgba(250, 204, 21, 0.14);
+    }
+
+    .tab-inactive {
+      color: #CBD5E1;
+      background: rgba(15, 23, 42, 0.58);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .metric-card {
+      background: linear-gradient(145deg, rgba(23, 35, 62, 0.96), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(250, 204, 21, 0.13);
+    }
+
+    .canvas-shell {
+      height: min(72vh, 760px);
+      min-height: 560px;
+      overflow: hidden;
+      touch-action: none;
+      background-color: #0B1224;
+      background-image:
+        linear-gradient(rgba(250, 204, 21, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(250, 204, 21, 0.05) 1px, transparent 1px),
+        radial-gradient(circle at center, rgba(250, 204, 21, 0.08), transparent 55%);
+      background-size: 30px 30px, 30px 30px, 100% 100%;
+      cursor: grab;
+    }
+
+    .canvas-shell.panning {
+      cursor: grabbing;
+    }
+
+    .canvas-stage {
+      position: absolute;
+      inset: 0;
+      width: 2200px;
+      height: 1400px;
+      transform-origin: 0 0;
+    }
+
+    .canvas-node {
+      position: absolute;
+      min-width: 110px;
+      min-height: 62px;
+      border: 1px solid rgba(250, 204, 21, 0.34);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24);
+      user-select: none;
+      cursor: move;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    }
+
+    .canvas-node:hover,
+    .canvas-node.selected {
+      border-color: rgba(250, 204, 21, 0.88);
+      box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18), 0 24px 46px rgba(0, 0, 0, 0.32);
+    }
+
+    .canvas-node.selected {
+      z-index: 10;
+    }
+
+    .node-circle {
+      border-radius: 999px;
+    }
+
+    .node-rect {
+      border-radius: 18px;
+    }
+
+    .node-note {
+      border-radius: 14px 14px 26px 14px;
+      background: linear-gradient(145deg, rgba(250, 204, 21, 0.96), rgba(251, 146, 60, 0.90));
+      color: #0F172A;
+    }
+
+    .node-wallet {
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(250, 204, 21, 0.22), rgba(23, 35, 62, 0.98));
+    }
+
+    .node-resize {
+      position: absolute;
+      right: 5px;
+      bottom: 5px;
+      width: 13px;
+      height: 13px;
+      border-right: 2px solid rgba(250, 204, 21, 0.85);
+      border-bottom: 2px solid rgba(250, 204, 21, 0.85);
+      cursor: nwse-resize;
+    }
+
+    .line-layer {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+    }
+
+    .subtle-scrollbar::-webkit-scrollbar {
+      height: 9px;
+      width: 9px;
+    }
+
+    .subtle-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(250, 204, 21, 0.28);
+      border-radius: 999px;
+    }
+
+    .subtle-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.70);
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-100 antialiased">
+  <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="glass overflow-hidden rounded-[2rem] p-5 shadow-glow md:p-7">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex items-center gap-4">
+          <div class="gold-gradient flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl font-black text-luncNavy shadow-glow">L</div>
+          <div>
+            <div class="mb-1 inline-flex items-center gap-2 rounded-full border border-luncGold/20 bg-luncGold/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-luncGold">
+              Terra Luna Classic Intelligence Workspace
+            </div>
+            <h1 class="text-3xl font-black tracking-tight text-white sm:text-5xl">LUNC AI Wallet Hub</h1>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
+              A power-user dashboard for LUNC holders: AI wallet analysis, Obsidian knowledge capture, X feed intelligence, and a Lucidchart-style strategy canvas.
+            </p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:w-[470px]">
+          <div class="metric-card rounded-2xl p-4">
+            <div class="text-xs uppercase tracking-widest text-slate-400">Wallet Score</div>
+            <div id="walletScore" class="mt-1 text-2xl font-black text-luncGold">82</div>
+          </div>
+          <div class="metric-card rounded-2xl p-4">
+            <div class="text-xs uppercase tracking-widest text-slate-400">Risk</div>
+            <div id="riskBadge" class="mt-1 text-2xl font-black text-emerald-300">Low</div>
+          </div>
+          <div class="metric-card rounded-2xl p-4">
+            <div class="text-xs uppercase tracking-widest text-slate-400">X Mood</div>
+            <div id="sentimentBadge" class="mt-1 text-2xl font-black text-luncOrange">Bullish</div>
+          </div>
+          <div class="metric-card rounded-2xl p-4">
+            <div class="text-xs uppercase tracking-widest text-slate-400">Canvas</div>
+            <div id="nodeCount" class="mt-1 text-2xl font-black text-white">4</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="glass sticky top-3 z-30 rounded-3xl p-2 shadow-glow">
+      <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <button class="tab-btn tab-active rounded-2xl px-4 py-3 text-sm font-extrabold" data-tab="wallet">Wallet Tracker + AI</button>
+        <button class="tab-btn tab-inactive rounded-2xl px-4 py-3 text-sm font-extrabold" data-tab="obsidian">Obsidian Bridge</button>
+        <button class="tab-btn tab-inactive rounded-2xl px-4 py-3 text-sm font-extrabold" data-tab="xtracker">X Post Tracker</button>
+        <button class="tab-btn tab-inactive rounded-2xl px-4 py-3 text-sm font-extrabold" data-tab="canvas">Visual Canvas</button>
+      </div>
+    </nav>
+
+    <main>
+      <section id="wallet" class="tab-panel active">
+        <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div class="glass rounded-[2rem] p-5 shadow-glow md:p-6">
+            <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 class="text-2xl font-black text-white">Wallet Tracker + AI Analysis</h2>
+                <p class="mt-1 text-sm text-slate-300">Mock wallet intelligence layer ready for Terra Station, Keplr, or LCD API integration.</p>
+              </div>
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <input id="walletInput" class="rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm outline-none transition focus:border-luncGold" value="terra1luncaihub8q4m7s9p2classicx" aria-label="Wallet address" />
+                <button id="connectWalletBtn" class="gold-gradient rounded-2xl px-5 py-3 text-sm font-black text-luncNavy transition hover:scale-[1.02]">Connect Wallet</button>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 sm:grid-cols-3">
+              <div class="metric-card rounded-3xl p-5">
+                <div class="text-xs font-bold uppercase tracking-widest text-slate-400">LUNC Balance</div>
+                <div id="luncBalance" class="mt-2 text-3xl font-black text-luncGold">18,450,920</div>
+                <div class="mt-1 text-xs text-slate-400">staking ratio 62%</div>
+              </div>
+              <div class="metric-card rounded-3xl p-5">
+                <div class="text-xs font-bold uppercase tracking-widest text-slate-400">USTC Balance</div>
+                <div id="ustcBalance" class="mt-2 text-3xl font-black text-luncOrange">42,180</div>
+                <div class="mt-1 text-xs text-slate-400">stable narrative watch</div>
+              </div>
+              <div class="metric-card rounded-3xl p-5">
+                <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Est. Value</div>
+                <div id="totalValue" class="mt-2 text-3xl font-black text-white">$2,846</div>
+                <div class="mt-1 text-xs text-slate-400">mock spot model</div>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+              <button id="analyzeWalletBtn" class="rounded-2xl border border-luncGold/40 bg-luncGold/10 px-5 py-3 text-sm font-black text-luncGold transition hover:bg-luncGold hover:text-luncNavy">Analyze Wallet</button>
+              <button id="walletToCanvasBtn" class="rounded-2xl border border-luncOrange/40 bg-luncOrange/10 px-5 py-3 text-sm font-black text-luncOrange transition hover:bg-luncOrange hover:text-luncNavy">Send Wallet Snapshot to Canvas</button>
+              <button id="walletToObsidianBtn" class="rounded-2xl border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-bold text-slate-200 transition hover:border-luncGold">Generate Markdown Note</button>
+            </div>
+
+            <div id="walletAnalysis" class="mt-6 rounded-3xl border border-luncGold/20 bg-slate-950/55 p-5 text-sm leading-7 text-slate-200">
+              <span class="font-bold text-luncGold">AI Insight:</span> Your wallet shows an accumulation-heavy profile with steady staking rewards and limited exchange outflows. Ask the AI for deeper pattern analysis.
+            </div>
+
+            <div class="mt-6 overflow-hidden rounded-3xl border border-slate-700/70">
+              <div class="flex items-center justify-between border-b border-slate-700 bg-slate-950/70 px-4 py-3">
+                <h3 class="font-black text-white">Recent Transactions</h3>
+                <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Tagged mock data</span>
+              </div>
+              <div class="subtle-scrollbar overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                  <thead class="bg-slate-900/80 text-xs uppercase tracking-widest text-slate-400">
+                    <tr>
+                      <th class="px-4 py-3">Time</th>
+                      <th class="px-4 py-3">Type</th>
+                      <th class="px-4 py-3">Amount</th>
+                      <th class="px-4 py-3">Counterparty</th>
+                      <th class="px-4 py-3">AI Tag</th>
+                      <th class="px-4 py-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="txTable" class="divide-y divide-slate-800 bg-slate-950/45"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <aside class="glass flex min-h-[660px] flex-col rounded-[2rem] p-5 shadow-orangeGlow md:p-6">
+            <div>
+              <h2 class="text-2xl font-black text-white">Ask AI about my wallet</h2>
+              <p class="mt-1 text-sm text-slate-300">Natural language wallet analyst for flows, staking, risk, and strategy notes.</p>
+            </div>
+            <div id="chatLog" class="subtle-scrollbar mt-5 flex-1 space-y-4 overflow-y-auto rounded-3xl border border-slate-700/70 bg-slate-950/50 p-4">
+              <div class="rounded-2xl bg-luncGold/10 p-4 text-sm leading-6 text-slate-100">
+                <span class="font-black text-luncGold">LUNC AI:</span> Try “What changed this week?”, “Explain my exchange risk”, or “What should I map on the canvas?”
+              </div>
+            </div>
+            <div class="mt-4 grid gap-3">
+              <div class="flex flex-wrap gap-2">
+                <button class="quickAsk rounded-full border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-luncGold" data-q="What wallet patterns stand out?">Patterns</button>
+                <button class="quickAsk rounded-full border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-luncGold" data-q="What risks should I monitor?">Risks</button>
+                <button class="quickAsk rounded-full border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-luncGold" data-q="Create an Obsidian summary.">Obsidian summary</button>
+              </div>
+              <div class="flex gap-2">
+                <input id="chatInput" class="min-w-0 flex-1 rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm outline-none focus:border-luncGold" placeholder="Ask AI about wallet flows, staking, or risk..." />
+                <button id="sendChatBtn" class="gold-gradient rounded-2xl px-5 py-3 text-sm font-black text-luncNavy">Ask</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="obsidian" class="tab-panel">
+        <div class="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div class="glass rounded-[2rem] p-5 shadow-glow md:p-6">
+            <h2 class="text-2xl font-black text-white">Obsidian Bridge</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-300">
+              Generate Markdown with YAML frontmatter and LUNC-specific tags. This mock bridge can be wired to the Obsidian Local REST API for direct bidirectional sync.
+            </p>
+            <div class="mt-5 grid gap-3 sm:grid-cols-2">
+              <button id="generateNoteBtn" class="gold-gradient rounded-2xl px-5 py-3 text-sm font-black text-luncNavy">Generate Rich Markdown</button>
+              <button id="copyNoteBtn" class="rounded-2xl border border-luncGold/40 bg-luncGold/10 px-5 py-3 text-sm font-black text-luncGold hover:bg-luncGold hover:text-luncNavy">Copy for Obsidian</button>
+              <button id="saveAnalysisBtn" class="rounded-2xl border border-luncOrange/40 bg-luncOrange/10 px-5 py-3 text-sm font-black text-luncOrange hover:bg-luncOrange hover:text-luncNavy">Save Current Analysis</button>
+              <button id="noteToCanvasBtn" class="rounded-2xl border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-bold text-slate-200 hover:border-luncGold">Add Note to Canvas</button>
+            </div>
+            <div class="mt-6 rounded-3xl border border-slate-700/70 bg-slate-950/50 p-5">
+              <h3 class="font-black text-white">Local REST API instructions</h3>
+              <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-300">
+                <li>Install the Obsidian Local REST API community plugin in your vault.</li>
+                <li>Enable HTTPS or localhost mode and copy the generated API key.</li>
+                <li>Future enhancement: replace <code class="rounded bg-slate-900 px-1 text-luncGold">copyMarkdown()</code> with a POST to <code class="rounded bg-slate-900 px-1 text-luncGold">/vault/LUNC/Wallet.md</code>.</li>
+              </ol>
+            </div>
+            <div class="mt-6">
+              <label class="text-sm font-black text-white" for="obsidianImport">Import from Obsidian</label>
+              <textarea id="obsidianImport" class="subtle-scrollbar mt-2 h-44 w-full rounded-3xl border border-slate-700 bg-slate-950/75 p-4 text-sm leading-6 outline-none focus:border-luncGold" placeholder="Paste an Obsidian note here to extract tasks, tags, and strategy hints..."></textarea>
+              <button id="importNoteBtn" class="mt-3 rounded-2xl border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-bold text-slate-200 hover:border-luncGold">Analyze Imported Note</button>
+            </div>
+          </div>
+          <div class="glass rounded-[2rem] p-5 shadow-orangeGlow md:p-6">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-xl font-black text-white">Generated Markdown</h3>
+              <span id="copyStatus" class="text-xs font-bold uppercase tracking-widest text-slate-400">Ready</span>
+            </div>
+            <textarea id="markdownOutput" class="subtle-scrollbar mt-4 h-[590px] w-full rounded-3xl border border-slate-700 bg-slate-950/80 p-5 font-mono text-xs leading-6 text-slate-200 outline-none focus:border-luncGold"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="xtracker" class="tab-panel">
+        <div class="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div class="glass rounded-[2rem] p-5 shadow-glow md:p-6">
+            <h2 class="text-2xl font-black text-white">X Post Tracker <span class="text-luncGold">(xAI MCP style)</span></h2>
+            <p class="mt-2 text-sm leading-6 text-slate-300">Simulated tool calls for X search, feed summarization, theme extraction, and memory actions.</p>
+            <div class="mt-5 flex flex-col gap-2 sm:flex-row">
+              <input id="xSearch" class="min-w-0 flex-1 rounded-2xl border border-slate-700 bg-slate-950/75 px-4 py-3 text-sm outline-none focus:border-luncGold" value="LUNC staking burn tax Terra Classic AI" />
+              <button id="fetchPostsBtn" class="gold-gradient rounded-2xl px-5 py-3 text-sm font-black text-luncNavy">Fetch Recent Posts</button>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-3">
+              <button id="analyzeFeedBtn" class="rounded-2xl border border-luncGold/40 bg-luncGold/10 px-5 py-3 text-sm font-black text-luncGold hover:bg-luncGold hover:text-luncNavy">Analyze Whole Feed</button>
+              <button id="feedToCanvasBtn" class="rounded-2xl border border-luncOrange/40 bg-luncOrange/10 px-5 py-3 text-sm font-black text-luncOrange hover:bg-luncOrange hover:text-luncNavy">Map Feed Themes</button>
+            </div>
+            <div id="xAnalysis" class="mt-5 rounded-3xl border border-luncGold/20 bg-slate-950/55 p-5 text-sm leading-7 text-slate-200">
+              <span class="font-bold text-luncGold">Feed Intelligence:</span> Ready to simulate xAI/MCP-style post retrieval and semantic analysis.
+            </div>
+          </div>
+
+          <div class="glass rounded-[2rem] p-5 shadow-orangeGlow md:p-6">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-black text-white">Recent LUNC Posts</h3>
+              <span class="rounded-full bg-luncGold/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-luncGold">Mock API</span>
+            </div>
+            <div id="postList" class="subtle-scrollbar mt-4 max-h-[640px] space-y-4 overflow-y-auto"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="canvas" class="tab-panel">
+        <div class="glass rounded-[2rem] p-4 shadow-glow md:p-5">
+          <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <h2 class="text-2xl font-black text-white">Visual Canvas</h2>
+              <p class="mt-1 text-sm text-slate-300">Map transaction flows, staking strategy, X sentiment, and Obsidian knowledge graphs. Drag nodes, double-click to edit, connect ideas.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <select id="nodeType" class="rounded-2xl border border-slate-700 bg-slate-950/75 px-3 py-3 text-sm font-bold outline-none focus:border-luncGold">
+                <option value="rect">Rectangle</option>
+                <option value="circle">Circle</option>
+                <option value="note">Note</option>
+                <option value="wallet">Wallet Icon</option>
+              </select>
+              <button id="addNodeBtn" class="gold-gradient rounded-2xl px-4 py-3 text-sm font-black text-luncNavy">Add Node</button>
+              <button id="connectModeBtn" class="rounded-2xl border border-luncGold/40 bg-luncGold/10 px-4 py-3 text-sm font-black text-luncGold">Connect</button>
+              <button id="deleteNodeBtn" class="rounded-2xl border border-slate-600 bg-slate-900/70 px-4 py-3 text-sm font-bold text-slate-200">Delete</button>
+              <button id="clearCanvasBtn" class="rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">Clear</button>
+              <button id="exportPngBtn" class="rounded-2xl border border-luncOrange/40 bg-luncOrange/10 px-4 py-3 text-sm font-black text-luncOrange">Export PNG</button>
+              <button id="canvasToObsidianBtn" class="rounded-2xl border border-slate-600 bg-slate-900/70 px-4 py-3 text-sm font-bold text-slate-200">Export to Obsidian</button>
+            </div>
+          </div>
+          <div class="mt-4 grid gap-4 lg:grid-cols-[1fr_260px]">
+            <div id="canvasShell" class="canvas-shell relative rounded-[1.7rem] border border-luncGold/20">
+              <div id="canvasStage" class="canvas-stage">
+                <svg id="lineLayer" class="line-layer" width="2200" height="1400">
+                  <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                      <path d="M0,0 L0,6 L9,3 z" fill="#FACC15"></path>
+                    </marker>
+                  </defs>
+                </svg>
+                <div id="nodeLayer"></div>
+              </div>
+            </div>
+            <aside class="rounded-[1.7rem] border border-slate-700/80 bg-slate-950/50 p-4">
+              <h3 class="font-black text-white">Canvas Controls</h3>
+              <div class="mt-4 space-y-3 text-sm text-slate-300">
+                <p><span class="font-bold text-luncGold">Drag</span> nodes to rearrange flows.</p>
+                <p><span class="font-bold text-luncGold">Double-click</span> a node to edit its label.</p>
+                <p><span class="font-bold text-luncGold">Connect</span> mode: click source, then target.</p>
+                <p><span class="font-bold text-luncGold">Wheel</span> to zoom. Drag empty space to pan.</p>
+                <p><span class="font-bold text-luncGold">Resize</span> selected nodes with the corner handle.</p>
+              </div>
+              <div class="mt-5 rounded-2xl border border-luncGold/20 bg-luncGold/10 p-4 text-xs leading-5 text-slate-200">
+                <strong class="text-luncGold">Future upgrade:</strong> wire this state to a real graph store, Mermaid export, or a dedicated library such as tldraw, Excalidraw, React Flow, or Fabric.js.
+              </div>
+              <div class="mt-5">
+                <div class="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
+                  <span>Zoom</span><span id="zoomLabel">100%</span>
+                </div>
+                <input id="zoomRange" type="range" min="45" max="160" value="100" class="w-full accent-luncGold" />
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Future integration points:
+    // - Replace mock wallet data with Terra Classic LCD/FCD queries or wallet adapters.
+    // - Replace AI simulation with xAI/Grok, OpenAI, or a local MCP-compatible agent.
+    // - Replace Obsidian copy flow with authenticated Local REST API calls.
+    // - Persist canvas state to IndexedDB, a vault note, or a backend graph database.
+
+    const walletData = {
+      address: 'terra1luncaihub8q4m7s9p2classicx',
+      lunc: 18450920,
+      ustc: 42180,
+      value: 2846,
+      stakedPercent: 62,
+      score: 82,
+      risk: 'Low',
+      transactions: [
+        { time: '2h ago', type: 'Stake Reward', amount: '+128,420 LUNC', counterparty: 'classic-validator-07', tag: 'Compounding' },
+        { time: '11h ago', type: 'Send', amount: '-820,000 LUNC', counterparty: 'terra1dex...m9k', tag: 'DEX liquidity' },
+        { time: '1d ago', type: 'Receive', amount: '+2,400,000 LUNC', counterparty: 'terra1cold...q2p', tag: 'Cold wallet inflow' },
+        { time: '3d ago', type: 'Swap', amount: '+6,300 USTC', counterparty: 'Terraswap route', tag: 'USTC narrative' },
+        { time: '5d ago', type: 'Delegate', amount: '+1,750,000 LUNC', counterparty: 'LUNC DAO validator', tag: 'Governance aligned' }
+      ]
+    };
+
+    const mockPosts = [
+      {
+        author: '@ClassicQuant',
+        text: 'LUNC staking ratio keeps grinding higher while short-term liquidity thins. Watching validator concentration and burn-tax governance proposals.',
+        sentiment: 'Constructive',
+        theme: 'Staking / governance'
+      },
+      {
+        author: '@USTCWatcher',
+        text: 'USTC repeg chatter is back. I want data, not hype: wallet flows into DEX pools are the real signal this week.',
+        sentiment: 'Neutral bullish',
+        theme: 'USTC / liquidity'
+      },
+      {
+        author: '@TerraBuilder',
+        text: 'Classic chain tooling needs better dashboards. Wallet intelligence + vault notes would help active holders build conviction maps.',
+        sentiment: 'Bullish',
+        theme: 'Builder tools'
+      },
+      {
+        author: '@BurnTaxRadar',
+        text: 'Burn headlines are useful, but exchange reserve movement matters more. Track net flows before chasing every spike.',
+        sentiment: 'Cautious',
+        theme: 'Risk / exchange flows'
+      }
+    ];
+
+    function makeId() {
+      return globalThis.crypto && globalThis.crypto.randomUUID
+        ? globalThis.crypto.randomUUID()
+        : `lunc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    const appState = {
+      lastAnalysis: '',
+      selectedNodeId: null,
+      connectMode: false,
+      pendingConnection: null,
+      scale: 1,
+      panX: 0,
+      panY: 0,
+      nodes: [
+        { id: makeId(), type: 'wallet', label: 'My Wallet\n18.45M LUNC', x: 130, y: 150, w: 180, h: 96, color: 'wallet' },
+        { id: makeId(), type: 'rect', label: 'Major Tx\nDEX liquidity move', x: 450, y: 165, w: 210, h: 96, color: 'rect' },
+        { id: makeId(), type: 'circle', label: 'Staking\nRewards', x: 250, y: 380, w: 150, h: 150, color: 'circle' },
+        { id: makeId(), type: 'note', label: 'Community Sentiment\nBullish but cautious', x: 720, y: 340, w: 220, h: 120, color: 'note' }
+      ],
+      lines: []
+    };
+    appState.lines.push({ from: appState.nodes[0].id, to: appState.nodes[1].id });
+    appState.lines.push({ from: appState.nodes[0].id, to: appState.nodes[2].id });
+    appState.lines.push({ from: appState.nodes[1].id, to: appState.nodes[3].id });
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat('en-US').format(value);
+    }
+
+    function switchTab(tabName) {
+      $$('.tab-btn').forEach((button) => {
+        const active = button.dataset.tab === tabName;
+        button.classList.toggle('tab-active', active);
+        button.classList.toggle('tab-inactive', !active);
+      });
+      $$('.tab-panel').forEach((panel) => panel.classList.toggle('active', panel.id === tabName));
+      if (tabName === 'canvas') {
+        requestAnimationFrame(renderCanvas);
+      }
+    }
+
+    function renderTransactions() {
+      $('#txTable').innerHTML = walletData.transactions.map((tx, index) => `
+        <tr>
+          <td class="px-4 py-4 text-slate-300">${tx.time}</td>
+          <td class="px-4 py-4 font-bold text-white">${tx.type}</td>
+          <td class="px-4 py-4 font-black ${tx.amount.startsWith('+') ? 'text-emerald-300' : 'text-red-300'}">${tx.amount}</td>
+          <td class="px-4 py-4 text-slate-300">${tx.counterparty}</td>
+          <td class="px-4 py-4"><span class="rounded-full bg-luncGold/10 px-3 py-1 text-xs font-bold text-luncGold">${tx.tag}</span></td>
+          <td class="px-4 py-4"><button class="txCanvas rounded-xl border border-luncOrange/40 px-3 py-2 text-xs font-black text-luncOrange hover:bg-luncOrange hover:text-luncNavy" data-index="${index}">Send to Canvas</button></td>
+        </tr>
+      `).join('');
+      $$('.txCanvas').forEach((button) => {
+        button.addEventListener('click', () => {
+          const tx = walletData.transactions[Number(button.dataset.index)];
+          addNode('rect', `${tx.type}\n${tx.amount}\n${tx.tag}`, 520 + Math.random() * 260, 220 + Math.random() * 180);
+          switchTab('canvas');
+        });
+      });
+    }
+
+    function walletAnalysisText() {
+      return `Wallet ${walletData.address} currently holds ${formatNumber(walletData.lunc)} LUNC and ${formatNumber(walletData.ustc)} USTC with an estimated value of $${formatNumber(walletData.value)}. AI pattern read: accumulation bias remains strong, ${walletData.stakedPercent}% of LUNC exposure is staked, and recent DEX movement is modest relative to the wallet size. Primary watchpoints are validator concentration, exchange reserve changes, and USTC narrative spikes. Suggested next action: map the latest DEX liquidity transaction against staking rewards and X sentiment before increasing exposure.`;
+    }
+
+    function analyzeWallet() {
+      appState.lastAnalysis = walletAnalysisText();
+      $('#walletAnalysis').innerHTML = `<span class="font-bold text-luncGold">AI Insight:</span> ${appState.lastAnalysis}`;
+      $('#walletScore').textContent = walletData.score;
+      $('#riskBadge').textContent = walletData.risk;
+      addChatMessage('LUNC AI', appState.lastAnalysis, 'ai');
+      return appState.lastAnalysis;
+    }
+
+    function aiReply(question) {
+      const lower = question.toLowerCase();
+      if (lower.includes('risk') || lower.includes('exchange')) {
+        return 'Risk read: no severe concentration event in the mock history, but the DEX liquidity send deserves a watchlist item. Track whether follow-up outflows cluster within 24-48 hours, and add exchange reserve monitoring before large position changes.';
+      }
+      if (lower.includes('obsidian') || lower.includes('summary')) {
+        return 'Obsidian-ready summary: wallet thesis is accumulation + staking yield, with USTC optionality as the secondary narrative. Tags: #lunc #wallet #ai-insight #staking #risk.';
+      }
+      if (lower.includes('canvas') || lower.includes('map')) {
+        return 'Canvas suggestion: create four nodes: wallet core, staking rewards, DEX liquidity move, and X sentiment. Connect staking rewards back to wallet core, then connect DEX liquidity to sentiment so you can watch narrative-driven flow changes.';
+      }
+      return 'Pattern read: this wallet behaves like a patient holder rather than a rapid trader. Rewards are being compounded, exchange-facing activity is limited, and the biggest signal to monitor is whether USTC/LUNC narrative spikes start matching wallet movement.';
+    }
+
+    function addChatMessage(sender, text, kind) {
+      const bubble = document.createElement('div');
+      bubble.className = kind === 'user'
+        ? 'ml-auto max-w-[88%] rounded-2xl bg-slate-800 p-4 text-sm leading-6 text-slate-100'
+        : 'max-w-[92%] rounded-2xl bg-luncGold/10 p-4 text-sm leading-6 text-slate-100';
+      bubble.innerHTML = `<span class="font-black ${kind === 'user' ? 'text-white' : 'text-luncGold'}">${sender}:</span> ${text}`;
+      $('#chatLog').appendChild(bubble);
+      $('#chatLog').scrollTop = $('#chatLog').scrollHeight;
+    }
+
+    function handleChat(question = $('#chatInput').value.trim()) {
+      if (!question) return;
+      addChatMessage('You', question, 'user');
+      $('#chatInput').value = '';
+      const reply = aiReply(question);
+      setTimeout(() => {
+        addChatMessage('LUNC AI', reply, 'ai');
+        appState.lastAnalysis = reply;
+      }, 180);
+    }
+
+    function generateMarkdown(extra = '') {
+      const analysis = appState.lastAnalysis || walletAnalysisText();
+      const topTags = walletData.transactions.map((tx) => tx.tag).join(', ');
+      const markdown = `---
+title: LUNC AI Wallet Hub - Wallet Intelligence
+created: ${new Date().toISOString()}
+wallet: ${walletData.address}
+chain: Terra Luna Classic
+tags:
+  - lunc
+  - wallet
+  - ai-insight
+  - staking
+  - obsidian
+---
+
+# LUNC AI Wallet Hub
+
+## Wallet Snapshot
+- **Address:** \`${walletData.address}\`
+- **LUNC:** ${formatNumber(walletData.lunc)}
+- **USTC:** ${formatNumber(walletData.ustc)}
+- **Estimated Value:** $${formatNumber(walletData.value)}
+- **Wallet Score:** ${walletData.score}/100
+- **Risk:** ${walletData.risk}
+
+## AI Analysis
+${analysis}
+
+## Tagged Transactions
+${walletData.transactions.map((tx) => `- **${tx.time}** ${tx.type}: ${tx.amount} via ${tx.counterparty} — #${tx.tag.toLowerCase().replaceAll(' ', '-')}`).join('\n')}
+
+## X / Community Themes
+- Sentiment: Bullish but selective.
+- Themes: staking, USTC liquidity, burn-tax governance, exchange reserves.
+- Tags observed: ${topTags}
+
+## Canvas Map
+\`\`\`mermaid
+flowchart LR
+  Wallet["My Wallet"] --> Tx["Major Tx / DEX liquidity"]
+  Wallet --> Staking["Staking Rewards"]
+  Tx --> Sentiment["Community Sentiment"]
+\`\`\`
+
+## Tags
+#lunc #wallet #ai-insight #terra-classic #staking #x-intelligence
+${extra ? `\n## Imported / Extra Context\n${extra}\n` : ''}`;
+      $('#markdownOutput').value = markdown;
+      return markdown;
+    }
+
+    async function copyMarkdown() {
+      const note = $('#markdownOutput').value || generateMarkdown();
+      try {
+        await navigator.clipboard.writeText(note);
+        $('#copyStatus').textContent = 'Copied';
+      } catch (error) {
+        $('#copyStatus').textContent = 'Select + copy manually';
+      }
+      setTimeout(() => ($('#copyStatus').textContent = 'Ready'), 1800);
+    }
+
+    function renderPosts(posts = mockPosts) {
+      $('#postList').innerHTML = posts.map((post, index) => `
+        <article class="rounded-3xl border border-slate-700/80 bg-slate-950/55 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h4 class="font-black text-white">${post.author}</h4>
+            <span class="rounded-full bg-luncGold/10 px-3 py-1 text-xs font-bold text-luncGold">${post.sentiment}</span>
+          </div>
+          <p class="mt-3 text-sm leading-6 text-slate-300">${post.text}</p>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300">${post.theme}</span>
+            <button class="postObsidian rounded-xl border border-luncGold/40 px-3 py-2 text-xs font-black text-luncGold hover:bg-luncGold hover:text-luncNavy" data-index="${index}">Save Post to Obsidian</button>
+            <button class="postCanvas rounded-xl border border-luncOrange/40 px-3 py-2 text-xs font-black text-luncOrange hover:bg-luncOrange hover:text-luncNavy" data-index="${index}">Add to Canvas</button>
+          </div>
+        </article>
+      `).join('');
+
+      $$('.postObsidian').forEach((button) => {
+        button.addEventListener('click', () => {
+          const post = mockPosts[Number(button.dataset.index)];
+          generateMarkdown(`### Saved X Post\n- Author: ${post.author}\n- Theme: ${post.theme}\n- Sentiment: ${post.sentiment}\n- Text: ${post.text}`);
+          switchTab('obsidian');
+        });
+      });
+
+      $$('.postCanvas').forEach((button) => {
+        button.addEventListener('click', () => {
+          const post = mockPosts[Number(button.dataset.index)];
+          addNode('note', `${post.theme}\n${post.sentiment}\n${post.author}`, 780 + Math.random() * 220, 150 + Math.random() * 260);
+          switchTab('canvas');
+        });
+      });
+    }
+
+    function analyzeFeed() {
+      const analysis = 'xAI-style feed read: LUNC conversation is bullish around staking and tooling, neutral-to-cautious around USTC repeg claims, and increasingly focused on exchange reserve movement. Best strategy note: use X as a narrative radar, then validate with wallet flows before acting.';
+      $('#xAnalysis').innerHTML = `<span class="font-bold text-luncGold">Feed Intelligence:</span> ${analysis}`;
+      $('#sentimentBadge').textContent = 'Bullish';
+      appState.lastAnalysis = analysis;
+      return analysis;
+    }
+
+    function renderCanvas() {
+      const stage = $('#canvasStage');
+      stage.style.transform = `translate(${appState.panX}px, ${appState.panY}px) scale(${appState.scale})`;
+      $('#nodeCount').textContent = appState.nodes.length;
+      $('#zoomLabel').textContent = `${Math.round(appState.scale * 100)}%`;
+      $('#zoomRange').value = Math.round(appState.scale * 100);
+
+      const nodeLayer = $('#nodeLayer');
+      nodeLayer.innerHTML = '';
+      appState.nodes.forEach((node) => {
+        const el = document.createElement('div');
+        el.className = `canvas-node node-${node.type} ${node.id === appState.selectedNodeId ? 'selected' : ''}`;
+        el.dataset.id = node.id;
+        el.style.left = `${node.x}px`;
+        el.style.top = `${node.y}px`;
+        el.style.width = `${node.w}px`;
+        el.style.height = `${node.h}px`;
+        if (node.type !== 'note' && node.type !== 'wallet') {
+          el.style.background = node.type === 'circle'
+            ? 'linear-gradient(145deg, rgba(251, 146, 60, 0.25), rgba(15, 23, 42, 0.98))'
+            : 'linear-gradient(145deg, rgba(23, 35, 62, 0.98), rgba(15, 23, 42, 0.98))';
+        }
+        el.innerHTML = `
+          <div class="flex h-full w-full items-center justify-center whitespace-pre-line p-4 text-center text-sm font-black leading-5 ${node.type === 'note' ? 'text-luncNavy' : 'text-white'}">
+            ${node.type === 'wallet' ? '<span class="mr-2 text-2xl">◐</span>' : ''}${escapeHtml(node.label)}
+          </div>
+          <div class="node-resize" title="Resize"></div>
+        `;
+        nodeLayer.appendChild(el);
+      });
+      renderLines();
+      bindNodeEvents();
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function renderLines() {
+      const svg = $('#lineLayer');
+      const defs = svg.querySelector('defs').outerHTML;
+      const lineMarkup = appState.lines.map((line) => {
+        const from = appState.nodes.find((node) => node.id === line.from);
+        const to = appState.nodes.find((node) => node.id === line.to);
+        if (!from || !to) return '';
+        const x1 = from.x + from.w / 2;
+        const y1 = from.y + from.h / 2;
+        const x2 = to.x + to.w / 2;
+        const y2 = to.y + to.h / 2;
+        const midX = (x1 + x2) / 2;
+        return `<path d="M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}" stroke="#FACC15" stroke-width="3" fill="none" opacity="0.76" marker-end="url(#arrow)" />`;
+      }).join('');
+      svg.innerHTML = defs + lineMarkup;
+    }
+
+    function canvasPoint(clientX, clientY) {
+      const rect = $('#canvasShell').getBoundingClientRect();
+      return {
+        x: (clientX - rect.left - appState.panX) / appState.scale,
+        y: (clientY - rect.top - appState.panY) / appState.scale
+      };
+    }
+
+    function addNode(type = $('#nodeType').value, label = 'New LUNC Node', x = 360, y = 260) {
+      const defaults = {
+        rect: { w: 180, h: 92 },
+        circle: { w: 140, h: 140 },
+        note: { w: 210, h: 118 },
+        wallet: { w: 190, h: 98 }
+      };
+      const size = defaults[type] || defaults.rect;
+      const node = { id: makeId(), type, label, x, y, w: size.w, h: size.h };
+      appState.nodes.push(node);
+      appState.selectedNodeId = node.id;
+      renderCanvas();
+      return node;
+    }
+
+    function markSelectedNode(id) {
+      appState.selectedNodeId = id;
+      $$('.canvas-node').forEach((nodeEl) => {
+        nodeEl.classList.toggle('selected', nodeEl.dataset.id === id);
+      });
+    }
+
+    function deleteSelectedNode() {
+      if (!appState.selectedNodeId) return;
+      appState.nodes = appState.nodes.filter((node) => node.id !== appState.selectedNodeId);
+      appState.lines = appState.lines.filter((line) => line.from !== appState.selectedNodeId && line.to !== appState.selectedNodeId);
+      appState.selectedNodeId = null;
+      renderCanvas();
+    }
+
+    function bindNodeEvents() {
+      $$('.canvas-node').forEach((el) => {
+        const id = el.dataset.id;
+        const node = appState.nodes.find((item) => item.id === id);
+        const resizeHandle = el.querySelector('.node-resize');
+
+        el.addEventListener('pointerdown', (event) => {
+          event.stopPropagation();
+          markSelectedNode(id);
+
+          if (appState.connectMode) {
+            if (!appState.pendingConnection) {
+              appState.pendingConnection = id;
+              el.classList.add('selected');
+            } else if (appState.pendingConnection !== id) {
+              appState.lines.push({ from: appState.pendingConnection, to: id });
+              appState.pendingConnection = null;
+              appState.connectMode = false;
+              $('#connectModeBtn').classList.remove('bg-luncGold', 'text-luncNavy');
+            }
+            renderCanvas();
+            return;
+          }
+
+          if (event.target === resizeHandle) return;
+          const start = canvasPoint(event.clientX, event.clientY);
+          const startX = node.x;
+          const startY = node.y;
+          el.setPointerCapture(event.pointerId);
+
+          const move = (moveEvent) => {
+            const current = canvasPoint(moveEvent.clientX, moveEvent.clientY);
+            node.x = Math.max(0, startX + current.x - start.x);
+            node.y = Math.max(0, startY + current.y - start.y);
+            el.style.left = `${node.x}px`;
+            el.style.top = `${node.y}px`;
+            renderLines();
+          };
+          const up = () => {
+            el.removeEventListener('pointermove', move);
+            el.removeEventListener('pointerup', up);
+          };
+          el.addEventListener('pointermove', move);
+          el.addEventListener('pointerup', up);
+        });
+
+        resizeHandle.addEventListener('pointerdown', (event) => {
+          event.stopPropagation();
+          markSelectedNode(id);
+          const start = canvasPoint(event.clientX, event.clientY);
+          const startW = node.w;
+          const startH = node.h;
+          resizeHandle.setPointerCapture(event.pointerId);
+          const move = (moveEvent) => {
+            const current = canvasPoint(moveEvent.clientX, moveEvent.clientY);
+            node.w = Math.max(90, startW + current.x - start.x);
+            node.h = Math.max(58, startH + current.y - start.y);
+            if (node.type === 'circle') {
+              node.h = node.w;
+            }
+            el.style.width = `${node.w}px`;
+            el.style.height = `${node.h}px`;
+            renderLines();
+          };
+          const up = () => {
+            resizeHandle.removeEventListener('pointermove', move);
+            resizeHandle.removeEventListener('pointerup', up);
+          };
+          resizeHandle.addEventListener('pointermove', move);
+          resizeHandle.addEventListener('pointerup', up);
+        });
+
+        el.addEventListener('dblclick', (event) => {
+          event.stopPropagation();
+          const nextLabel = prompt('Edit node label', node.label);
+          if (nextLabel !== null) {
+            node.label = nextLabel.trim() || node.label;
+            renderCanvas();
+          }
+        });
+      });
+    }
+
+    function setupPanZoom() {
+      const shell = $('#canvasShell');
+      let panning = false;
+      let startX = 0;
+      let startY = 0;
+      let initialPanX = 0;
+      let initialPanY = 0;
+
+      shell.addEventListener('pointerdown', (event) => {
+        if (event.target.closest('.canvas-node')) return;
+        panning = true;
+        startX = event.clientX;
+        startY = event.clientY;
+        initialPanX = appState.panX;
+        initialPanY = appState.panY;
+        shell.setPointerCapture(event.pointerId);
+        shell.classList.add('panning');
+        appState.selectedNodeId = null;
+        renderCanvas();
+      });
+
+      shell.addEventListener('pointermove', (event) => {
+        if (!panning) return;
+        appState.panX = initialPanX + event.clientX - startX;
+        appState.panY = initialPanY + event.clientY - startY;
+        renderCanvas();
+      });
+
+      shell.addEventListener('pointerup', () => {
+        panning = false;
+        shell.classList.remove('panning');
+      });
+
+      shell.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? -0.06 : 0.06;
+        appState.scale = Math.min(1.6, Math.max(0.45, appState.scale + delta));
+        renderCanvas();
+      }, { passive: false });
+
+      $('#zoomRange').addEventListener('input', (event) => {
+        appState.scale = Number(event.target.value) / 100;
+        renderCanvas();
+      });
+    }
+
+    function exportCanvasPng() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1400;
+      canvas.height = 900;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.07)';
+      for (let x = 0; x < canvas.width; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      appState.lines.forEach((line) => {
+        const from = appState.nodes.find((node) => node.id === line.from);
+        const to = appState.nodes.find((node) => node.id === line.to);
+        if (!from || !to) return;
+        ctx.strokeStyle = '#FACC15';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(from.x + from.w / 2, from.y + from.h / 2);
+        ctx.lineTo(to.x + to.w / 2, to.y + to.h / 2);
+        ctx.stroke();
+      });
+
+      appState.nodes.forEach((node) => {
+        const gradient = ctx.createLinearGradient(node.x, node.y, node.x + node.w, node.y + node.h);
+        if (node.type === 'note') {
+          gradient.addColorStop(0, '#FACC15');
+          gradient.addColorStop(1, '#FB923C');
+          ctx.fillStyle = gradient;
+        } else {
+          gradient.addColorStop(0, node.type === 'wallet' ? '#3A3420' : '#17233E');
+          gradient.addColorStop(1, '#0F172A');
+          ctx.fillStyle = gradient;
+        }
+        ctx.strokeStyle = '#FACC15';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (node.type === 'circle') {
+          ctx.ellipse(node.x + node.w / 2, node.y + node.h / 2, node.w / 2, node.h / 2, 0, 0, Math.PI * 2);
+        } else {
+          roundRect(ctx, node.x, node.y, node.w, node.h, 18);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = node.type === 'note' ? '#0F172A' : '#FFFFFF';
+        ctx.font = 'bold 18px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        node.label.split('\n').forEach((line, index, lines) => {
+          ctx.fillText(line, node.x + node.w / 2, node.y + node.h / 2 - (lines.length - 1) * 12 + index * 24);
+        });
+      });
+
+      const link = document.createElement('a');
+      link.download = 'lunc-ai-wallet-canvas.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + width, y, x + width, y + height, radius);
+      ctx.arcTo(x + width, y + height, x, y + height, radius);
+      ctx.arcTo(x, y + height, x, y, radius);
+      ctx.arcTo(x, y, x + width, y, radius);
+      ctx.closePath();
+    }
+
+    function exportCanvasToObsidian() {
+      const nodes = appState.nodes.map((node) => `- ${node.label.replaceAll('\n', ' / ')} (${node.type})`).join('\n');
+      const mermaidLines = appState.lines.map((line, index) => {
+        const from = appState.nodes.find((node) => node.id === line.from);
+        const to = appState.nodes.find((node) => node.id === line.to);
+        return from && to ? `  N${index}A["${from.label.split('\n')[0]}"] --> N${index}B["${to.label.split('\n')[0]}"]` : '';
+      }).filter(Boolean).join('\n');
+      generateMarkdown(`### Canvas Export\n${nodes}\n\n\`\`\`mermaid\nflowchart LR\n${mermaidLines || '  Wallet --> Strategy'}\n\`\`\`\n\nPNG export is available from the Visual Canvas toolbar.`);
+      switchTab('obsidian');
+    }
+
+    function bindControls() {
+      $$('.tab-btn').forEach((button) => button.addEventListener('click', () => switchTab(button.dataset.tab)));
+      $('#connectWalletBtn').addEventListener('click', () => {
+        walletData.address = $('#walletInput').value.trim() || walletData.address;
+        analyzeWallet();
+      });
+      $('#analyzeWalletBtn').addEventListener('click', analyzeWallet);
+      $('#walletToCanvasBtn').addEventListener('click', () => {
+        addNode('wallet', `My Wallet\n${formatNumber(walletData.lunc)} LUNC\n$${formatNumber(walletData.value)}`, 160, 140);
+        switchTab('canvas');
+      });
+      $('#walletToObsidianBtn').addEventListener('click', () => {
+        generateMarkdown();
+        switchTab('obsidian');
+      });
+      $('#sendChatBtn').addEventListener('click', () => handleChat());
+      $('#chatInput').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') handleChat();
+      });
+      $$('.quickAsk').forEach((button) => button.addEventListener('click', () => handleChat(button.dataset.q)));
+      $('#generateNoteBtn').addEventListener('click', () => generateMarkdown());
+      $('#copyNoteBtn').addEventListener('click', copyMarkdown);
+      $('#saveAnalysisBtn').addEventListener('click', () => generateMarkdown(appState.lastAnalysis || analyzeWallet()));
+      $('#noteToCanvasBtn').addEventListener('click', () => {
+        addNode('note', 'Obsidian Note\n#wallet #ai-insight', 680, 500);
+        switchTab('canvas');
+      });
+      $('#importNoteBtn').addEventListener('click', () => {
+        const note = $('#obsidianImport').value.trim();
+        const tags = [...note.matchAll(/#[\w-]+/g)].map((match) => match[0]).slice(0, 6).join(' ');
+        const insight = note
+          ? `Imported note analysis: found ${tags || 'no explicit tags'}. Suggested canvas node created for vault context.`
+          : 'Paste an Obsidian note first to extract tags and strategy hints.';
+        appState.lastAnalysis = insight;
+        generateMarkdown(insight);
+        if (note) addNode('note', `Imported Vault Note\n${tags || 'Strategy context'}`, 600, 560);
+      });
+      $('#fetchPostsBtn').addEventListener('click', () => {
+        const query = $('#xSearch').value.trim();
+        renderPosts(mockPosts.map((post) => ({ ...post, text: post.text + ` Query match: "${query}".` })));
+        $('#xAnalysis').innerHTML = `<span class="font-bold text-luncGold">MCP Tool Call:</span> search_recent_posts(query="${escapeHtml(query)}") returned ${mockPosts.length} posts.`;
+      });
+      $('#analyzeFeedBtn').addEventListener('click', analyzeFeed);
+      $('#feedToCanvasBtn').addEventListener('click', () => {
+        analyzeFeed();
+        addNode('note', 'X Feed Themes\nStaking + USTC + reserves', 830, 170);
+        switchTab('canvas');
+      });
+      $('#addNodeBtn').addEventListener('click', () => addNode());
+      $('#deleteNodeBtn').addEventListener('click', deleteSelectedNode);
+      $('#clearCanvasBtn').addEventListener('click', () => {
+        if (confirm('Clear all canvas nodes and connectors?')) {
+          appState.nodes = [];
+          appState.lines = [];
+          appState.selectedNodeId = null;
+          renderCanvas();
+        }
+      });
+      $('#connectModeBtn').addEventListener('click', () => {
+        appState.connectMode = !appState.connectMode;
+        appState.pendingConnection = null;
+        $('#connectModeBtn').classList.toggle('bg-luncGold', appState.connectMode);
+        $('#connectModeBtn').classList.toggle('text-luncNavy', appState.connectMode);
+      });
+      $('#exportPngBtn').addEventListener('click', exportCanvasPng);
+      $('#canvasToObsidianBtn').addEventListener('click', exportCanvasToObsidian);
+      document.addEventListener('keydown', (event) => {
+        if ((event.key === 'Backspace' || event.key === 'Delete') && appState.selectedNodeId && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+          deleteSelectedNode();
+        }
+      });
+    }
+
+    function init() {
+      $('#luncBalance').textContent = formatNumber(walletData.lunc);
+      $('#ustcBalance').textContent = formatNumber(walletData.ustc);
+      $('#totalValue').textContent = `$${formatNumber(walletData.value)}`;
+      $('#walletScore').textContent = walletData.score;
+      $('#riskBadge').textContent = walletData.risk;
+      renderTransactions();
+      renderPosts();
+      generateMarkdown();
+      bindControls();
+      setupPanZoom();
+      renderCanvas();
+    }
+
+    init();
+  </script>
+</body>
+</html>
